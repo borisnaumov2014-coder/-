@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Универсальный Калькулятор</title>
+    <style>
+        /* --- CSS Переменные для тем --- */
+        :root {
+            --bg-body: #f0f2f5;
+            --bg-calc: #ffffff;
+            --text-main: #000000;
+            --border-color: #ccc;
+            --tab-bg: #eee;
+            --tab-active-bg: #007bff;
+            --tab-active-text: #ffffff;
+            --display-bg: #f8f9fa;
+            --btn-bg: #e9ecef;
+            --btn-hover: #dee2e6;
+            --fraction-line: #000000;
+            --input-border: #ccc;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-body: #121212;
+            --bg-calc: #1e1e1e;
+            --text-main: #e0e0e0;
+            --border-color: #333;
+            --tab-bg: #2d2d2d;
+            --tab-active-bg: #0d6efd;
+            --tab-active-text: #ffffff;
+            --display-bg: #2c2c2c;
+            --btn-bg: #3a3a3a;
+            --btn-hover: #4a4a4a;
+            --fraction-line: #e0e0e0;
+            --input-border: #444;
+            --shadow: rgba(0, 0, 0, 0.5);
+        }
+
+        /* --- Основные стили --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .calc-container {
+            background: var(--bg-calc);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px var(--shadow);
+            width: 320px;
+            position: relative;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        /* Кнопка смены темы */
+        .theme-toggle {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: var(--bg-calc);
+            color: var(--text-main);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 5px var(--shadow);
+            transition: background-color 0.3s;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: var(--tab-bg);
+            color: var(--text-main);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .tab-btn.active {
+            background: var(--tab-active-bg);
+            color: var(--tab-active-text);
+        }
+
+        /* Обычный калькулятор */
+        #display {
+            width: 100%;
+            height: 50px;
+            background: var(--display-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 24px;
+            text-align: right;
+            padding: 10px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            outline: none;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .keys {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .keys button {
+            padding: 15px;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            background: var(--btn-bg);
+            color: var(--text-main);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .keys button:hover { background: var(--btn-hover); }
+        .keys button.operator { background: #ffc107; color: #000; }
+        .keys button.operator:hover { background: #e0a800; }
+        .keys button.equal { background: #28a745; color: white; grid-column: span 2; }
+        .keys button.equal:hover { background: #218838; }
+        .keys button.clear { background: #dc3545; color: white; grid-column: span 2; }
+        .keys button.clear:hover { background: #c82333; }
+
+        /* Калькулятор дробей */
+        .fraction-calc {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .fraction-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .fraction {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 60px;
+        }
+
+        .fraction input {
+            width: 100%;
+            text-align: center;
+            padding: 5px;
+            font-size: 16px;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            background: var(--display-bg);
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .fraction-line {
+            width: 100%;
+            height: 2px;
+            background: var(--fraction-line);
+            margin: 5px 0;
+            transition: background-color 0.3s;
+        }
+
+        .operator-select {
+            font-size: 20px;
+            padding: 5px;
+            border-radius: 4px;
+            background: var(--display-bg);
+            color: var(--text-main);
+            border: 1px solid var(--input-border);
+        }
+
+        .calc-frac-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--tab-active-bg);
+            color: var(--tab-active-text);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: background 0.3s;
+        }
+
+        .calc-frac-btn:hover { filter: brightness(0.9); }
+
+        .result-box {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            min-height: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calc-container">
+    <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()">🌙 Темная</button>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('standard')" id="tab-std">Обычный</button>
+        <button class="tab-btn" onclick="switchTab('fraction')" id="tab-frac">Дроби</button>
+    </div>
+
+    <div id="standard-calc">
+        <input type="text" id="display" disabled>
+        <div class="keys">
+            <button class="clear" onclick="clearDisplay()">C</button>
+            <button class="operator" onclick="appendChar('(')">(</button>
+            <button class="operator" onclick="appendChar(')')">)</button>
+            
+            <button onclick="appendChar('7')">7</button>
+            <button onclick="appendChar('8')">8</button>
+            <button onclick="appendChar('9')">9</button>
+            <button class="operator" onclick="appendChar('/')">÷</button>
+            
+            <button onclick="appendChar('4')">4</button>
+            <button onclick="appendChar('5')">5</button>
+            <button onclick="appendChar('6')">6</button>
+            <button class="operator" onclick="appendChar('*')">×</button>
+            
+            <button onclick="appendChar('1')">1</button>
+            <button onclick="appendChar('2')">2</button>
+            <button onclick="appendChar('3')">3</button>
+            <button class="operator" onclick="appendChar('-')">−</button>
+            
+            <button onclick="appendChar('0')">0</button>
+            <button onclick="appendChar('.')">.</button>
+            <button class="equal" onclick="calculate()">=</button>
+            <button class="operator" onclick="appendChar('+')">+</button>
+        </div>
+    </div>
+
+    <div id="fraction-calc" class="fraction-calc">
+        <div class="fraction-row">
+            <div class="fraction">
+                <input type="number" id="n1" placeholder="Числ.">
+                <div class="fraction-line"></div>
+                <input type="number" id="d1" placeholder="Знам.">
+            </div>
+            
+            <select id="op" class="operator-select">
+                <option value="+">+</option>
+                <option value="-">−</option>
+                <option value="*">×</option>
+                <option value="/">÷</option>
+            </select>
+
+            <div class="fraction">
+                <input type="number" id="n2" placeholder="Числ.">
+                <div class="fraction-line"></div>
+                <input type="number" id="d2" placeholder="Знам.">
+            </div>
+        </div>
+
+        <button class="calc-frac-btn" onclick="calculateFraction()">Вычислить</button>
+
+        <div class="result-box" id="frac-result">
+            </div>
+    </div>
+</div>
+
+<script>
+    // --- Логика переключения темы ---
+    function toggleTheme() {
+        const body = document.body;
+        const themeBtn = document.getElementById('theme-btn');
+        
+        if (body.getAttribute('data-theme') === 'dark') {
+            body.removeAttribute('data-theme');
+            themeBtn.innerText = '🌙 Темная';
+        } else {
+            body.setAttribute('data-theme', 'dark');
+            themeBtn.innerText = '☀️ Светлая';
+        }
+    }
+
+    // --- Логика переключения вкладок ---
+    function switchTab(tab) {
+        document.getElementById('standard-calc').style.display = tab === 'standard' ? 'block' : 'none';
+        document.getElementById('fraction-calc').style.display = tab === 'fraction' ? 'flex' : 'none';
+        
+        document.getElementById('tab-std').classList.toggle('active', tab === 'standard');
+        document.getElementById('tab-frac').classList.toggle('active', tab === 'fraction');
+    }
+
+    // --- Логика обычного калькулятора ---
+    const display = document.getElementById('display');
+
+    function appendChar(char) {
+        display.value += char;
+    }
+
+    function clearDisplay() {
+        display.value = '';
+    }
+
+    function calculate() {
+        try {
+            let result = eval(display.value);
+            display.value = Math.round(result * 100000000) / 100000000;
+        } catch (e) {
+            display.value = 'Ошибка';
+            setTimeout(clearDisplay, 1500);
+        }
+    }
+
+    // --- Логика калькулятора дробей ---
+    function gcd(a, b) {
+        return b === 0 ? Math.abs(a) : gcd(b, a % b);
+    }
+
+    function calculateFraction() {
+        let n1 = parseInt(document.getElementById('n1').value) || 0;
+        let d1 = parseInt(document.getElementById('d1').value) || 1;
+        let n2 = parseInt(document.getElementById('n2').value) || 0;
+        let d2 = parseInt(document.getElementById('d2').value) || 1;
+        let op = document.getElementById('op').value;
+
+        if (d1 === 0 || d2 === 0) {
+            document.getElementById('frac-result').innerHTML = "<span style='color:red;'>Деление на ноль!</span>";
+            return;
+        }
+
+        let resN, resD;
+
+        switch(op) {
+            case '+': resN = (n1 * d2) + (n2 * d1); resD = d1 * d2; break;
+            case '-': resN = (n1 * d2) - (n2 * d1); resD = d1 * d2; break;
+            case '*': resN = n1 * n2; resD = d1 * d2; break;
+            case '/': 
+                if (n2 === 0) {
+                    document.getElementById('frac-result').innerHTML = "<span style='color:red;'>Деление на ноль!</span>";
+                    return;
+                }
+                resN = n1 * d2; resD = d1 * n2; 
+                break;
+        }
+
+        let divisor = gcd(resN, resD);
+        resN = resN / divisor;
+        resD = resD / divisor;
+
+        if (resD < 0) {
+            resN = -resN;
+            resD = -resD;
+        }
+
+        let htmlResult = "=";
+        if (resD === 1 || resN === 0) {
+            htmlResult += ` <span>${resN}</span>`;
+        } else {
+            htmlResult += `
+                <div class="fraction">
+                    <span>${resN}</span>
+                    <div class="fraction-line"></div>
+                    <span>${resD}</span>
+                </div>
+            `;
+        }
+        
+        document.getElementById('frac-result').innerHTML = htmlResult;
+    }
+</script>
+
+</body>
